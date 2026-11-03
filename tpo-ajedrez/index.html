@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#252721">
-  <title>TPO Ajedrez · Mesa de juego</title>
+  <title>TPO Ajedrez · Ajedrez de plaza</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E♞%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="./src/styles.css">
   <script type="importmap">
@@ -13,17 +13,18 @@
 </head>
 <body>
   <header class="header">
-    <a class="brand" href="./" aria-label="TPO Ajedrez, inicio"><span class="brand-mark">♞</span><span>AJEDREZ<small>EL ARTE DE PENSAR</small></span></a>
+    <a class="brand" href="./" aria-label="TPO Ajedrez, inicio"><span class="brand-mark">♞</span><span>AJEDREZ<small>NOS VEMOS EN LA PLAZA</small></span></a>
     <button id="mode-btn" class="game-mode" aria-pressed="false" title="Jugar contra la IA"><i></i> <span id="mode-name">Partida local</span> <span class="mode-divider">/</span> <span id="mode-detail">Dos jugadores</span></button>
-    <span class="edition">TPO <span>—</span> 01</span>
+    <span class="edition">AL AIRE LIBRE <span>—</span> TPO</span>
   </header>
   <main class="game-layout">
-    <section class="table" aria-label="Mesa de ajedrez">
-      <div class="table-heading"><span id="table-eyebrow" class="eyebrow">TU PRÓXIMA JUGADA</span><h1 id="table-title">Cada movimiento cuenta.</h1><p id="ai-taunt" class="taunt" aria-live="polite" hidden></p></div>
+    <section class="table" aria-label="Mesa de ajedrez en la plaza">
+      <div class="table-heading"><span id="table-eyebrow" class="eyebrow">UNA PARTIDA AL SOL</span><h1 id="table-title">La plaza nos encuentra.</h1><p id="ai-taunt" class="taunt" aria-live="polite" hidden></p></div>
       <div id="board" class="board" aria-label="Tablero de ajedrez interactivo"></div>
+      <div id="perspective-indicator" class="perspective-indicator"><span class="perspective-piece" aria-hidden="true">♟</span><span><strong id="perspective-name">Vista de blancas</strong><small id="perspective-detail">Giro automático por turno</small></span></div>
       <div id="render-error" class="render-error" hidden>La vista 3D no está disponible en este navegador. Podés seguir jugando en la vista clásica.</div>
       <div class="table-bottom">
-        <span id="view-hint" class="view-hint">Arrastrá para girar · Deslizá para acercar</span>
+        <span id="view-hint" class="view-hint">Arrastrá para recorrer la plaza · Deslizá para acercar</span>
         <div id="move-legend" class="move-legend" aria-live="polite" hidden></div>
         <div class="view-controls" aria-label="Controles del tablero">
           <button id="view-btn" class="view-button" aria-pressed="false" title="Cambiar a vista desde arriba">2D</button>
@@ -42,10 +43,10 @@
       <div class="history-columns"><span>#</span><span>BLANCAS</span><span>NEGRAS</span></div>
       <div id="history" class="history" aria-label="Historial de movimientos"></div>
       <div class="actions"><button id="undo-btn" class="button secondary" disabled><span>↶</span> Deshacer jugada</button><button id="restart-btn" class="button primary"><span>+</span> Nueva partida</button></div>
-      <p class="sidebar-note">Una mesa. Dos mentes. Infinitas posibilidades.</p>
+      <p class="sidebar-note">La mesa de siempre. Una partida más.</p>
     </aside>
   </main>
-  <footer class="footer"><span>Tomate tu tiempo. Encontrá tu jugada.</span><span>AJEDREZ CLÁSICO <span class="footer-dot">•</span> VISTA 3D</span></footer>
+  <footer class="footer"><span>Sentate un rato. La próxima jugada es tuya.</span><span>AJEDREZ DE PLAZA <span class="footer-dot">•</span> VISTA 3D</span></footer>
   <dialog id="promotion-dialog" class="game-dialog" aria-labelledby="promotion-dialog-title">
     <form method="dialog">
       <span class="eyebrow">CORONACIÓN</span>

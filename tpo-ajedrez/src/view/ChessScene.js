@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Position } from '../core/models/Position.js';
+import { createPlaza } from './PlazaEnvironment.js';
 
 const surface = 0.29;
 // Cada tipo de jugada tiene su color y su forma, para que no dependa solo del color.
@@ -152,32 +153,6 @@ function makePiece(type, material, dark) {
   return group;
 }
 
-function woodTexture() {
-  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=1024;
-  const ctx=canvas.getContext('2d');
-  let seed=81;
-  const random=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;};
-  ctx.fillStyle='#817768';ctx.fillRect(0,0,1024,1024);
-  for(let p=0;p<8;p++) {
-    const x=p*128;
-    const tone=68+random()*18;
-    ctx.fillStyle=`rgb(${tone+17},${tone+10},${tone})`;ctx.fillRect(x,0,128,1024);
-    for(let j=0;j<180;j++) {
-      const gx=x+random()*128;
-      ctx.beginPath();ctx.moveTo(gx,0);
-      const bend=(random()-.5)*13;
-      ctx.bezierCurveTo(gx+bend,340,gx-bend,680,gx,1024);
-      ctx.strokeStyle=random()>.48?`rgba(38,29,19,${random()*.12})`:`rgba(235,224,198,${random()*.09})`;
-      ctx.lineWidth=.3+random()*1.5;ctx.stroke();
-    }
-    ctx.fillStyle='#302c2560';ctx.fillRect(x,0,2,1024);
-    ctx.fillStyle='#d7cbb63b';ctx.fillRect(x+2,0,1,1024);
-  }
-  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(2.5,2.5);
-  return texture;
-}
-
 export class ChessScene {
   constructor(container,onSelect) {
     this.container=container;this.onSelect=onSelect;this.flipped=false;this.topView=false;
@@ -185,33 +160,26 @@ export class ChessScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
     this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     this.renderer.shadowMap.autoUpdate=false;this.renderer.shadowMap.needsUpdate=true;
-    this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.05;
+    this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.95;
     this.renderer.domElement.setAttribute('aria-label','Tablero 3D. Seleccioná una pieza y una casilla de destino. Usá las flechas y Enter para jugar con teclado.');
     this.renderer.domElement.tabIndex=0;container.prepend(this.renderer.domElement);
-    this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#7d776a');
-    this.camera=new THREE.PerspectiveCamera(39,1,.1,100);
+    this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#9cc9e3');
+    this.scene.fog=new THREE.Fog('#b4ced7',65,180);
+    this.camera=new THREE.PerspectiveCamera(43,1,.1,260);
     this.controls=new OrbitControls(this.camera,this.renderer.domElement);
     this.controls.enablePan=false;this.controls.minDistance=10;this.controls.maxDistance=24;
     this.controls.minPolarAngle=.04;this.controls.maxPolarAngle=Math.PI*.37;
     this.controls.target.set(0,0,0);this.controls.addEventListener('change',()=>this.draw());
-    this.scene.add(new THREE.HemisphereLight(0xfff9e8,0x656957,1.8));
-    const sun=new THREE.DirectionalLight(0xfff4dc,3.1);sun.position.set(-5,10,5);
+    this.scene.add(new THREE.HemisphereLight(0xd7edff,0x7d8054,2.1));
+    const sun=new THREE.DirectionalLight(0xfff0d4,2.6);sun.position.set(-22,38,-15);
     sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
-    Object.assign(sun.shadow.camera,{left:-7,right:7,top:7,bottom:-7,near:.1,far:30});
+    Object.assign(sun.shadow.camera,{left:-35,right:35,top:35,bottom:-35,near:.1,far:100});
     sun.shadow.normalBias=.025;sun.shadow.bias=-.0002;this.scene.add(sun);
     const fill=new THREE.DirectionalLight(0xd9e5f1,1.2);fill.position.set(5,6,-4);this.scene.add(fill);
-    const wood=woodTexture();wood.anisotropy=this.renderer.capabilities.getMaxAnisotropy();
-    const table=mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({map:wood,roughness:.94}));
-    // UV scale keeps the wood grain at the same size on the expansive tabletop.
-    table.geometry.attributes.uv.array.forEach((v,i,a)=>{a[i]=v*7;});
-    table.rotation.x=-Math.PI/2;table.position.y=-.20;table.castShadow=false;this.scene.add(table);
-    const frame=mesh(new THREE.BoxGeometry(8.9,.34,8.9),new THREE.MeshStandardMaterial({color:0xc9bda3,roughness:.43}),0,.02);
-    this.scene.add(frame);
-    const rim=mesh(new THREE.BoxGeometry(8.96,.08,8.96),new THREE.MeshStandardMaterial({color:0x37392f,roughness:.55}),0,-.105);this.scene.add(rim);
-    const inset=mesh(new THREE.BoxGeometry(8.14,.09,8.14),new THREE.MeshStandardMaterial({color:0x32362f,roughness:.5}),0,.205);this.scene.add(inset);
+    this.plaza=createPlaza(this.scene,this.renderer);
     this.squares=[];
     for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
-      const tile=mesh(new THREE.BoxGeometry(1,.04,1),new THREE.MeshStandardMaterial({color:(r+c)%2?0x303530:0xe6dfcf,roughness:.56}),c-3.5,.27,r-3.5);
+      const tile=mesh(new THREE.BoxGeometry(1,.04,1),new THREE.MeshStandardMaterial({color:(r+c)%2?0x253947:0xeff1e9,roughness:.7}),c-3.5,.27,r-3.5);
       tile.userData={row:r,col:c};tile.castShadow=false;this.squares.push(tile);this.scene.add(tile);
     }
     this.addCoordinates();
@@ -221,6 +189,8 @@ export class ChessScene {
     this.motionPreference=window.matchMedia('(prefers-reduced-motion: reduce)');
     this.animation=null;
     this.animationFrame=null;
+    this.cameraAnimation=null;
+    this.cameraFrame=null;
     const ivory=new THREE.MeshStandardMaterial({color:0xf3ead4,roughness:.26,metalness:.08});
     const ebony=new THREE.MeshStandardMaterial({color:0x262923,roughness:.23,metalness:.14});
     this.templates={};
@@ -249,7 +219,7 @@ export class ChessScene {
 
   addCoordinates() {
     const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=1024;
-    const ctx=canvas.getContext('2d');ctx.font='500 18px sans-serif';ctx.fillStyle='#4a4a3d';ctx.textAlign='center';ctx.textBaseline='middle';
+    const ctx=canvas.getContext('2d');ctx.font='500 18px sans-serif';ctx.fillStyle='#55645f';ctx.textAlign='center';ctx.textBaseline='middle';
     const margin=1024*.45/8.9,cell=1024/8.9;
     for(let i=0;i<8;i++){
       const p=margin+cell*(i+.5);
@@ -258,7 +228,7 @@ export class ChessScene {
     }
     const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
     const labels=new THREE.Mesh(new THREE.PlaneGeometry(8.9,8.9),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false}));
-    labels.rotation.x=-Math.PI/2;labels.position.y=.197;this.scene.add(labels);
+    labels.rotation.x=-Math.PI/2;labels.position.y=.251;this.scene.add(labels);
   }
 
   resize() {
@@ -267,34 +237,84 @@ export class ChessScene {
     this.camera.aspect=width/height;this.camera.updateProjectionMatrix();this.renderer.setSize(width,height,false);this.resetCamera();
   }
 
-  resetCamera() {
+  resetCamera({animate=false}={}) {
     const aspect=this.camera.aspect;
-    const distance=Math.max(13.8,14/aspect);
+    const distance=this.topView?Math.max(15,12/aspect):Math.max(18.5,14/aspect);
     const direction=this.flipped?-1:1;
     this.controls.maxDistance=Math.max(24,distance*1.3);
     this.controls.target.set(0,0,0);
-    this.camera.position.set(0,this.topView?distance:distance*.81,this.topView?.01*direction:distance*.76*direction);
-    this.controls.enableRotate=!this.topView;this.controls.update();this.draw();
+    const position=new THREE.Vector3(0,this.topView?distance:distance*.78,this.topView?.01*direction:distance*.90*direction);
+    this.moveCamera(position,animate);
   }
-  flip(){this.flipped=!this.flipped;this.resetCamera();}
-  toggleView(){this.topView=!this.topView;this.resetCamera();return this.topView;}
+  setOrientation(flipped) {
+    if(this.flipped===flipped)return;
+    this.flipped=flipped;
+    // Keep the player's zoom and elevation while orbiting to the other side.
+    const orbit=new THREE.Spherical().setFromVector3(this.camera.position.clone().sub(this.controls.target));
+    orbit.theta=flipped?Math.PI:0;
+    this.moveCamera(new THREE.Vector3().setFromSpherical(orbit).add(this.controls.target),true);
+  }
+  flip(){this.setOrientation(!this.flipped);}
+  toggleView(){this.topView=!this.topView;this.resetCamera({animate:true});return this.topView;}
+
+  moveCamera(position,animate) {
+    if(this.cameraFrame!==null)cancelAnimationFrame(this.cameraFrame);
+    this.cameraFrame=null;this.cameraAnimation=null;
+    this.controls.enableRotate=!this.topView;
+    if(!animate||this.motionPreference.matches){
+      this.camera.position.copy(position);this.controls.enabled=true;this.controls.update();this.draw();return;
+    }
+    const from=new THREE.Spherical().setFromVector3(this.camera.position.clone().sub(this.controls.target));
+    const to=new THREE.Spherical().setFromVector3(position.clone().sub(this.controls.target));
+    // Follow an arc around the board, including in the overhead view.
+    to.theta=from.theta+Math.atan2(Math.sin(to.theta-from.theta),Math.cos(to.theta-from.theta));
+    this.cameraAnimation={from,to,position:position.clone(),start:null};
+    this.controls.enabled=false;
+    this.cameraFrame=requestAnimationFrame(time=>this.animateCamera(time));
+  }
+
+  animateCamera(time) {
+    const animation=this.cameraAnimation;
+    if(!animation)return;
+    // Finish the move and its effects before handing the board to the next player.
+    if(this.animation){this.cameraFrame=requestAnimationFrame(next=>this.animateCamera(next));return;}
+    animation.start??=time;
+    const progress=this.motionPreference.matches?1:Math.min(1,(time-animation.start)/850);
+    const eased=progress*progress*(3-2*progress);
+    const {from,to}=animation;
+    const orbit=new THREE.Spherical(
+      THREE.MathUtils.lerp(from.radius,to.radius,eased),
+      THREE.MathUtils.lerp(from.phi,to.phi,eased),
+      THREE.MathUtils.lerp(from.theta,to.theta,eased)
+    );
+    this.camera.position.copy(this.controls.target).add(new THREE.Vector3().setFromSpherical(orbit));
+    if(progress===1){
+      this.camera.position.copy(animation.position);
+      this.cameraAnimation=null;this.cameraFrame=null;this.controls.enabled=true;
+    }else this.cameraFrame=requestAnimationFrame(next=>this.animateCamera(next));
+    this.controls.update();this.draw();
+  }
   draw(){this.renderer.render(this.scene,this.camera);}
 
-  get isAnimating(){return this.animation!==null;}
+  get isAnimating(){return this.animation!==null||this.cameraAnimation!==null;}
 
   finishAnimation() {
     if(this.animationFrame!==null)cancelAnimationFrame(this.animationFrame);
     this.animationFrame=null;
     if(!this.animation)return;
-    const {moving,capture}=this.animation;
-    for(const {model,to} of moving)model.position.copy(to);
+    const {moving,capture,landings}=this.animation;
+    for(const {model,to,promotion} of moving){
+      model.position.copy(to);model.scale.setScalar(1);
+      if(promotion){promotion.visible=true;promotion.scale.setScalar(1);}
+    }
     if(capture){
       // Piece geometries belong to the templates. Only effect resources are disposable.
       for(const material of capture.materials)material.dispose();
       capture.particleGeometry.dispose();capture.particleMaterial.dispose();
       capture.ring.geometry.dispose();capture.ring.material.dispose();
-      this.effects.clear();
     }
+    for(const ring of landings){ring.geometry.dispose();ring.material.dispose();}
+    this.effects.clear();
     this.animation=null;
     this.renderer.shadowMap.needsUpdate=true;
   }
@@ -347,6 +367,13 @@ export class ChessScene {
       if(!model){
         model=this.templates[`${piece.type}-${piece.color}`].clone();
         model.position.copy(to);this.pieceModels.set(piece,model);this.pieces.add(model);
+        if(animate&&forwardMove&&piece===last?.promotedPiece){
+          const pawn=this.pieceModels.get(last.movedPiece);
+          if(pawn){
+            model.visible=false;
+            moving.push({model:pawn,from:pawn.position.clone(),to,promotion:model});
+          }
+        }
       }else if(!model.position.equals(to)){
         if(animate)moving.push({model,from:model.position.clone(),to,knight:piece.type==='KNIGHT'});
         else model.position.copy(to);
@@ -358,9 +385,15 @@ export class ChessScene {
     }
     this.renderedBoard=game.board;this.renderedLast=last;this.renderedHistoryLength=game.history.length;
     if(!moving.length)return;
+    for(const move of moving)if(move.promotion)this.effects.add(move.model);
     const capture=capturedModel?this.createCaptureEffect(capturedModel,capturedModel.position):null;
-    const duration=moving.some(move=>move.knight)?580:440;
-    this.animation={moving,capture,duration,start:performance.now()};
+    const landings=moving.map(({to,promotion})=>{
+      const ring=new THREE.Mesh(new THREE.RingGeometry(.29,.34,48),new THREE.MeshBasicMaterial({color:promotion?0xe8c547:0xc6cf9e,transparent:true,opacity:0,depthWrite:false}));
+      ring.rotation.x=-Math.PI/2;ring.position.copy(to);ring.position.y=surface+.045;
+      this.effects.add(ring);return ring;
+    });
+    const duration=moving.some(move=>move.promotion)?660:moving.some(move=>move.knight)?580:440;
+    this.animation={moving,capture,landings,duration,start:performance.now()};
     this.animationFrame=requestAnimationFrame(time=>this.animateMove(time));
   }
 
@@ -368,14 +401,25 @@ export class ChessScene {
     const animation=this.animation;
     if(!animation)return;
     if(this.motionPreference.matches){this.finishAnimation();this.draw();return;}
-    const {moving,capture,duration,start}=animation;
+    const {moving,capture,landings,duration,start}=animation;
     const elapsed=time-start;
     const progress=Math.min(1,elapsed/duration);
     const eased=progress*progress*(3-2*progress);
-    for(const {model,from,to,knight} of moving){
+    for(const {model,from,to,knight,promotion} of moving){
       model.position.lerpVectors(from,to,eased);
       // Knights leap over pieces; the others lift just above the board.
       model.position.y+=Math.sin(Math.PI*progress)*(knight?1.05:.16);
+      if(promotion){
+        const reveal=Math.min(1,Math.max(0,(elapsed-duration*.75)/300));
+        model.scale.setScalar(Math.max(.001,1-reveal));
+        promotion.visible=reveal>0;
+        promotion.scale.setScalar(Math.max(.001,reveal+Math.sin(Math.PI*reveal)*.16));
+      }
+    }
+    const landing=Math.min(1,Math.max(0,(elapsed-duration*.75)/360));
+    for(const ring of landings){
+      ring.scale.setScalar(1+landing*1.8);
+      ring.material.opacity=Math.sin(Math.PI*landing)*.65;
     }
     const impact=duration*.76;
     if(capture && elapsed>=impact){
@@ -397,7 +441,7 @@ export class ChessScene {
       }
     }
     this.renderer.shadowMap.needsUpdate=true;
-    if(elapsed>=(capture?impact+480:duration))this.finishAnimation();
+    if(elapsed>=Math.max(duration*.75+360,capture?impact+480:0))this.finishAnimation();
     else this.animationFrame=requestAnimationFrame(next=>this.animateMove(next));
     this.draw();
   }
@@ -418,7 +462,7 @@ export class ChessScene {
     const checkedKing=game.board.isKingInCheck(turn)&&game.board.findKingPosition(turn);
     for(const tile of this.squares) {
       const {row,col}=tile.userData,dark=(row+col)%2;
-      let color=dark?0x303530:0xe6dfcf;
+      let color=dark?0x253947:0xeff1e9;
       if(lastSquares.some(pos=>pos.row===row&&pos.col===col)) color=dark?0x717859:0xc2c49b;
       if(checkedKing&&checkedKing.row===row&&checkedKing.col===col)color=dark?0x8a3b2c:0xe29a86;
       if(selected?.row===row&&selected?.col===col)color=0xa3b275;
@@ -442,6 +486,7 @@ export class ChessScene {
   }
 
   onKey(event) {
+    if(this.isAnimating){if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' '].includes(event.key))event.preventDefault();return;}
     const steps={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]};
     if(steps[event.key]){
       event.preventDefault();this.keyboardActive=true;

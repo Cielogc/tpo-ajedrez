@@ -113,12 +113,13 @@ export class WebAdapter {
       event.currentTarget.textContent=top?'3D':'2D';
       event.currentTarget.setAttribute('aria-pressed',String(top));
       event.currentTarget.title=top?'Volver a vista 3D':'Cambiar a vista desde arriba';
-      document.getElementById('view-hint').textContent=top?'Vista superior · Seleccioná tu próxima jugada':'Arrastrá para girar · Deslizá para acercar';
+      document.getElementById('view-hint').textContent=top?'Vista superior · Seleccioná tu próxima jugada':'Arrastrá para recorrer la plaza · Deslizá para acercar';
     });
     document.getElementById('flip-btn').addEventListener('click',()=>{
-      if(this.scene)this.scene.flip();else{this.fallbackFlipped=!this.fallbackFlipped;this.render();}
+      if(this.scene){this.scene.flip();this.renderPerspectiveLabel();}
+      else{this.fallbackFlipped=!this.fallbackFlipped;this.render();}
     });
-    document.getElementById('reset-view-btn').addEventListener('click',()=>this.scene?.resetCamera());
+    document.getElementById('reset-view-btn').addEventListener('click',()=>this.scene?.resetCamera({animate:true}));
     this.boardElement.addEventListener('keyboard-position',event=>{
       this.render();
       const pos=new Position(event.detail.row,event.detail.col),piece=this.game.getPieceAt(pos);
@@ -240,9 +241,37 @@ export class WebAdapter {
       this.aiError??(selected?`${names[selected.type][0].toUpperCase()+names[selected.type].slice(1)} en ${squareName(this.selectedPosition)} · Elegí un destino.`:note||'Elegí una pieza para comenzar.');
     hint.classList.toggle('notice',!!note);
     if(this.scene)this.scene.update(this.game,this.selectedPosition,moves);
-    else this.renderFallback(moves);
+    this.syncPerspective(turn);
+    if(!this.scene)this.renderFallback(moves);
     this.renderLegend(moves);
     this.renderHistory();
+  }
+
+  syncPerspective(turn) {
+    const previous=this.perspectiveState;
+    const changed=!previous||previous.board!==this.game.board||previous.turn!==turn||previous.vsAI!==this.vsAI||previous.scene!==this.scene;
+    if(changed){
+      // Local play follows the turn. Against the AI, return to the human's side.
+      const flipped=!this.vsAI&&turn===Color.BLACK;
+      this.fallbackFlipped=flipped;
+      this.scene?.setOrientation(flipped);
+      this.perspectiveState={board:this.game.board,turn,vsAI:this.vsAI,scene:this.scene};
+      if(previous&&previous.turn!==turn&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        this.turnAnimation?.cancel();
+        this.turnAnimation=this.turnIndicator.animate([
+          {opacity:.25,transform:'translateY(8px)'},
+          {opacity:1,transform:'translateY(0)'}
+        ],{duration:380,easing:'ease-out'});
+      }
+    }
+    this.renderPerspectiveLabel();
+  }
+
+  renderPerspectiveLabel() {
+    const flipped=this.scene?this.scene.flipped:this.fallbackFlipped;
+    document.getElementById('perspective-name').textContent=`Vista de ${flipped?'negras':'blancas'}`;
+    document.getElementById('perspective-detail').textContent=this.vsAI?'Contra la IA':'Giro automático por turno';
+    document.getElementById('perspective-indicator').classList.toggle('black-view',!!flipped);
   }
 
   // Explica abajo del tablero las jugadas especiales de la pieza elegida, con la misma forma y color que su marca.
@@ -264,7 +293,7 @@ export class WebAdapter {
 
   renderTaunt() {
     const taunt=this.vsAI?this.taunt:null,bubble=document.getElementById('ai-taunt');
-    document.getElementById('table-eyebrow').textContent=taunt?'TU RIVAL DICE':'TU PRÓXIMA JUGADA';
+    document.getElementById('table-eyebrow').textContent=taunt?'TU RIVAL DICE':'UNA PARTIDA AL SOL';
     document.getElementById('table-title').hidden=!!taunt;
     bubble.hidden=!taunt;
     if(!taunt||bubble.textContent===taunt)return;
@@ -294,6 +323,10 @@ export class WebAdapter {
   }
 
   renderHistory() {
+    const last=this.game.history.at(-1);
+    if(this.historyBoard===this.game.board&&this.historyLast===last)return;
+    const animateLast=this.historyBoard===this.game.board&&this.game.history.length===this.historyLength+1;
+    this.historyBoard=this.game.board;this.historyLast=last;this.historyLength=this.game.history.length;
     this.historyElement.innerHTML='';
     document.getElementById('move-count').textContent=String(this.game.history.length).padStart(2,'0');
     if(!this.game.history.length){
@@ -306,7 +339,7 @@ export class WebAdapter {
       const number=document.createElement('span');number.textContent=String(i/2+1).padStart(2,'0');item.appendChild(number);
       for(let j=0;j<2;j++){
         const cell=document.createElement('span'),cmd=this.game.history[i+j];
-        if(cmd){cell.textContent=moveText(cmd);cell.title=moveTitle(cmd);}
+        if(cmd){cell.textContent=moveText(cmd);cell.title=moveTitle(cmd);if(animateLast&&cmd===last)cell.classList.add('new-move');}
         else cell.textContent='—';
         item.appendChild(cell);
       }

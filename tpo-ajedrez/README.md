@@ -1,6 +1,6 @@
 # TPO Ajedrez · 3D
 
-Ajedrez local para dos jugadores con tablero y piezas modeladas en Three.js, luz, sombras y una mesa de madera generada por código. El núcleo de reglas conserva su arquitectura original.
+Ajedrez local para dos jugadores en una plaza modelada en Three.js: mesa y bancos de hormigón, tablero integrado, césped, senderos, árboles, hamacas y toboganes. El entorno rodea la mesa para acompañar el giro de cámara en cada turno. Los materiales se generan localmente, sin descargar imágenes. El núcleo de reglas conserva su arquitectura original.
 
 ## Ejecutar
 
@@ -35,10 +35,13 @@ Tocá **Partida local / Dos jugadores** en el encabezado para pasar a **Contra l
 - Arrastrá sobre el tablero para girar la cámara; usá la rueda o el gesto de pinza para acercar.
 - **2D / 3D** alterna entre la cámara superior y la perspectiva.
 - **↻** cambia el lado del tablero; **⌖** restablece la cámara.
+- En **dos jugadores**, la cámara gira suavemente al terminar la jugada para mostrar el lado de quien sigue. También se ajusta al deshacer o reiniciar, tanto en 3D como en vista superior y clásica. Contra la IA, la vista se mantiene del lado humano; el giro manual dura hasta el próximo cambio de turno.
 - **Deshacer jugada** y **Nueva partida** controlan la partida.
 - Con el tablero enfocado, usá las flechas y Enter o Espacio para seleccionar casillas.
 
 Los movimientos se animan suavemente y los caballos saltan. Al capturar, la pieza rival se desvanece con partículas doradas y un anillo sobre la casilla. Deshacer también anima el regreso; reiniciar limpia cualquier efecto en curso. Se respeta la preferencia de movimiento reducido del sistema.
+
+Cada llegada ilumina la casilla con un anillo que se expande; al coronar, el peón se transforma en la pieza elegida. El turno, las tarjetas de jugadores, las nuevas jugadas del historial y los diálogos tienen transiciones. La cámara espera a que termine la animación de la pieza y conserva el acercamiento y la inclinación al cambiar de lado. Durante la transición se bloquea la selección de casillas para evitar jugadas accidentales.
 
 Si WebGL no está disponible, se muestra automáticamente un tablero clásico con botones accesibles. Las fuentes tienen alternativas locales.
 
