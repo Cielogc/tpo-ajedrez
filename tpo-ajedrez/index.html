@@ -2,225 +2,70 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>TPO Ajedrez - Juego Completo</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      width: 100vw;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #f0f0f0;
-      overflow: hidden;
-      position: relative;
-      background: #0d1117;
-    }
-
-    #bg-video {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      min-width: 100%;
-      min-height: 100%;
-      width: auto;
-      height: auto;
-      z-index: -1;
-      transform: translate(-50%, -50%);
-      object-fit: cover;
-      filter: brightness(50%);
-    }
-
-    h1 {
-      margin-bottom: 4px;
-      color: #ffffff;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-      font-size: 28px;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: #7dd3fc;
-      margin-bottom: 16px;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.9);
-    }
-
-    .game-container {
-      display: flex;
-      gap: 25px;
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.8), 0 0 20px rgba(56, 189, 248, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-
-    .board-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .board {
-      display: grid;
-      grid-template-columns: repeat(8, 64px);
-      grid-template-rows: repeat(8, 64px);
-      border: 4px solid #0f172a;
-      border-radius: 6px;
-      user-select: none;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.6);
-    }
-
-    .square {
-      width: 64px;
-      height: 64px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 44px;
-      cursor: pointer;
-      position: relative;
-    }
-
-    /* Tablero Azul y Celeste */
-    .square.white {
-      background-color: #bae6fd;
-    }
-
-    .square.black {
-      background-color: #0284c7;
-    }
-
-    .square.selected {
-      background-color: #facc15 !important;
-    }
-
-    .square.valid-move::after {
-      content: '';
-      width: 20px;
-      height: 20px;
-      background-color: rgba(15, 23, 42, 0.4);
-      border-radius: 50%;
-    }
-
-    .square.valid-capture {
-      background-color: #ef4444 !important;
-    }
-
-    .controls {
-      width: 260px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .status-card {
-      background: rgba(15, 23, 42, 0.85);
-      padding: 15px;
-      border-radius: 10px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .turn-indicator {
-      font-size: 18px;
-      font-weight: bold;
-      color: #38bdf8;
-      margin-top: 4px;
-    }
-
-    .alert {
-      margin-top: 10px;
-      padding: 8px;
-      background-color: #ef4444;
-      color: white;
-      border-radius: 6px;
-      font-weight: bold;
-      display: none;
-    }
-
-    .btn {
-      background-color: #0284c7;
-      color: white;
-      border: none;
-      padding: 12px;
-      font-size: 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
-    }
-
-    .btn:hover {
-      background-color: #0369a1;
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background-color: #334155;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    .btn-secondary:hover {
-      background-color: #475569;
-    }
-
-    .history {
-      background: rgba(15, 23, 42, 0.85);
-      padding: 10px;
-      border-radius: 10px;
-      height: 190px;
-      overflow-y: auto;
-      font-size: 13px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .history-item {
-      padding: 5px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#252721">
+  <title>TPO Ajedrez · Ajedrez de plaza</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E♞%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./src/styles.css">
+  <script type="importmap">
+    {"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}
+  </script>
 </head>
 <body>
-
-  <!-- Video de Fondo (Pantalla Completa Fijo) -->
-  <video autoplay muted loop id="bg-video">
-    <source src="assets/fondo1.mp4" type="video/mp4">
-  </video>
-
-  <h1>TPO Ajedrez</h1>
-  <div class="subtitle">Arquitectura Hexagonal — Núcleo Puro + Adaptador Web</div>
-
-  <div class="game-container">
-    <div class="board-container">
-      <div id="board" class="board"></div>
-    </div>
-
-    <div class="controls">
-      <div class="status-card">
-        <div>Turno actual:</div>
-        <div id="turn-indicator" class="turn-indicator">BLANCAS</div>
-        <div id="check-alert" class="alert">¡JAQUE!</div>
+  <header class="header">
+    <a class="brand" href="./" aria-label="TPO Ajedrez, inicio"><span class="brand-mark">♞</span><span>AJEDREZ<small>NOS VEMOS EN LA PLAZA</small></span></a>
+    <button id="mode-btn" class="game-mode" aria-pressed="false" title="Jugar contra la IA"><i></i> <span id="mode-name">Partida local</span> <span class="mode-divider">/</span> <span id="mode-detail">Dos jugadores</span></button>
+    <span class="edition">AL AIRE LIBRE <span>—</span> TPO</span>
+  </header>
+  <main class="game-layout">
+    <section class="table" aria-label="Mesa de ajedrez en la plaza">
+      <div class="table-heading"><span id="table-eyebrow" class="eyebrow">UNA PARTIDA AL SOL</span><h1 id="table-title">La plaza nos encuentra.</h1><p id="ai-taunt" class="taunt" aria-live="polite" hidden></p></div>
+      <div id="board" class="board" aria-label="Tablero de ajedrez interactivo"></div>
+      <div id="perspective-indicator" class="perspective-indicator"><span class="perspective-piece" aria-hidden="true">♟</span><span><strong id="perspective-name">Vista de blancas</strong><small id="perspective-detail">Giro automático por turno</small></span></div>
+      <div id="render-error" class="render-error" hidden>La vista 3D no está disponible en este navegador. Podés seguir jugando en la vista clásica.</div>
+      <div class="table-bottom">
+        <span id="view-hint" class="view-hint">Arrastrá para recorrer la plaza · Deslizá para acercar</span>
+        <div id="move-legend" class="move-legend" aria-live="polite" hidden></div>
+        <div class="view-controls" aria-label="Controles del tablero">
+          <button id="view-btn" class="view-button" aria-pressed="false" title="Cambiar a vista desde arriba">2D</button>
+          <span class="toolbar-divider"></span>
+          <button id="flip-btn" class="view-button" title="Girar tablero" aria-label="Girar tablero">↻</button>
+          <button id="reset-view-btn" class="view-button" title="Restablecer cámara" aria-label="Restablecer cámara">⌖</button>
+        </div>
       </div>
-
-      <button id="undo-btn" class="btn btn-secondary">Deshacer Movimiento (Undo)</button>
-      <button id="restart-btn" class="btn">Reiniciar Partida</button>
-
-      <div>Historial de Jugadas:</div>
-      <div id="history" class="history"></div>
-    </div>
-  </div>
-
+    </section>
+    <aside class="sidebar" aria-label="Información de la partida">
+      <div class="sidebar-title"><span>LA PARTIDA</span><span class="live-dot"></span></div>
+      <div id="player-black" class="player-card"><span class="player-piece black-piece">♟</span><div class="player-info"><h2>Negras</h2><span id="black-count">16 piezas en juego</span></div><span class="turn-dot" title="Turno actual"></span></div>
+      <div class="turn-panel" role="status" aria-live="polite"><span class="eyebrow">TURNO ACTUAL</span><div id="turn-indicator">Juegan las blancas</div><div id="check-alert" class="alert" hidden>¡Jaque!</div><p id="selection-hint">Elegí una pieza para comenzar.</p></div>
+      <div id="player-white" class="player-card active"><span class="player-piece white-piece">♟</span><div class="player-info"><h2>Blancas</h2><span id="white-count">16 piezas en juego</span></div><span class="turn-dot" title="Turno actual"></span></div>
+      <div class="history-heading"><h2>Movimientos</h2><span id="move-count">00</span></div>
+      <div class="history-columns"><span>#</span><span>BLANCAS</span><span>NEGRAS</span></div>
+      <div id="history" class="history" aria-label="Historial de movimientos"></div>
+      <div class="actions"><button id="undo-btn" class="button secondary" disabled><span>↶</span> Deshacer jugada</button><button id="restart-btn" class="button primary"><span>+</span> Nueva partida</button></div>
+      <p class="sidebar-note">La mesa de siempre. Una partida más.</p>
+    </aside>
+  </main>
+  <footer class="footer"><span>Sentate un rato. La próxima jugada es tuya.</span><span>AJEDREZ DE PLAZA <span class="footer-dot">•</span> VISTA 3D</span></footer>
+  <dialog id="promotion-dialog" class="game-dialog" aria-labelledby="promotion-dialog-title">
+    <form method="dialog">
+      <span class="eyebrow">CORONACIÓN</span>
+      <h2 id="promotion-dialog-title">¿En qué se convierte tu peón?</h2>
+      <div class="promotion-options">
+        <button value="QUEEN" aria-label="Dama" title="Dama">♕</button><button value="ROOK" aria-label="Torre" title="Torre">♖</button><button value="BISHOP" aria-label="Alfil" title="Alfil">♗</button><button value="KNIGHT" aria-label="Caballo" title="Caballo">♘</button>
+      </div>
+      <div class="dialog-actions single"><button id="promotion-cancel" type="button" class="button secondary">Cancelar</button></div>
+    </form>
+  </dialog>
+  <dialog id="name-dialog" class="game-dialog" aria-labelledby="name-dialog-title">
+    <form method="dialog">
+      <span class="eyebrow">CONTRA LA IA</span>
+      <h2 id="name-dialog-title">¿Cómo te llamás?</h2>
+      <p>Tu rival va a usar tu nombre para chicanearte en cada jugada.</p>
+      <input id="name-input" name="name" maxlength="24" autocomplete="given-name" placeholder="Tu nombre" required pattern=".*[\p{L}\p{N}].*" title="Usá al menos una letra o un número">
+      <div class="dialog-actions"><button id="name-cancel" type="button" class="button secondary">Cancelar</button><button value="ok" class="button primary">A jugar</button></div>
+    </form>
+  </dialog>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
